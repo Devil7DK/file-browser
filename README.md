@@ -12,7 +12,8 @@ This is meant to be used as a quick and simple remote file browser. **THIS IS NO
 ## Features
 
 - Optional HTTP basic auth support
-- Download files
+- Download single files
+- Download multiple files or folders as ZIP archive
 - Upload single or multiple files
 - Delete multiple files or folders
 - Supports dark theme in modern browsers
