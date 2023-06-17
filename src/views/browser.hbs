@@ -1,0 +1,495 @@
+<style>
+  div.file-list {
+    border: 0.1em solid var(--border-color);
+    border-radius: 0.5em;
+    flex: 1 1 1px;
+    overflow: auto;
+    position: relative;
+  }
+
+  div.file-list>table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+  }
+
+  div.file-list>table>colgroup>col.file-name {
+    text-align: left;
+    width: 100%;
+  }
+
+  div.file-list>table>thead>tr>th {
+    position: sticky;
+    top: 0;
+    box-shadow: inset 0 1px 0 var(--border-color), inset 0 -2px 0 var(--border-color);
+    background-color: var(--background-color);
+  }
+
+  div.file-list>table>thead>tr>th.file-name {
+    text-align: left;
+  }
+
+  div.file-list>table>thead>tr>th.file-name~th {
+    text-align: right;
+  }
+
+  div.file-list>table>thead>tr>th,
+  div.file-list>table>tbody>tr>td {
+    padding: 0.3em 0.5em;
+  }
+
+  div.file-list>table>tbody>tr:hover {
+    background-color: var(--row-hover-color);
+  }
+
+  div.file-list>table>tbody>tr.selected {
+    background-color: var(--row-selected-color);
+  }
+
+  div.drag-indicator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    display: none;
+    background-color: var(--overlay-background-color);
+    z-index: 1;
+    font-size: 3em;
+    color: var(--overlay-text-color);
+  }
+
+  div.file-list.dragging div.drag-indicator {
+    display: block;
+  }
+
+  div.file-list>div.progress-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--overlay-background-color);
+    z-index: 2;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  div.file-list>div.progress-overlay>div.bar {
+    width: 10em;
+    height: 0.5em;
+    background-color: var(--progressbar-background-color);
+    border-radius: 0.3em;
+  }
+
+  div.file-list>div.progress-overlay>div.bar>div.progress {
+    height: 100%;
+    background-color: var(--progressbar-bar-color);
+    border-radius: 0.3em;
+    box-shadow: 0 0 0.1em 0.1em var(--progressbar-bar-color);
+  }
+
+  div.file-list.uploading>div.progress-overlay {
+    display: flex;
+  }
+
+  div.toolbar {
+    display: flex;
+    margin-bottom: 1em;
+  }
+
+  div.toolbar>div.left {
+    flex: 1 1 1px;
+  }
+
+  @media (hover: hover) {
+    .select-column {
+      display: none;
+    }
+  }
+
+  @media (hover: none) {
+    div.file-list>table>tbody>tr.selected:hover {
+      background-color: var(--row-selected-color);
+    }
+  }
+</style>
+<script>
+  function humanFileSize(bytes) {
+    const thresh = 1024;
+    if (Math.abs(bytes) < thresh) {
+      return bytes + ' B';
+    }
+    const units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    let u = -1;
+    do {
+      bytes /= thresh;
+      ++u;
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + ' ' + units[u];
+  }
+
+  function uploadFiles(files) {
+    var $fileList = $("#file-list");
+
+    var formData = new FormData();
+    for (var i = 0; i < files.length; i++) {
+      formData.append("file", files[i]);
+    }
+
+    $.ajax({
+      method: "POST",
+      url: location.href,
+      data: formData,
+      cache: false,
+      processData: false,
+      contentType: false,
+      xhr: function () {
+        var xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener("progress", function (e) {
+          if (e.lengthComputable) {
+            var percent = Math.round((e.loaded / e.total) * 100);
+            $("#progressbar").css("width", percent + "%");
+            $("#status").text(percent + "% (" + humanFileSize(e.loaded) + "/" + humanFileSize(e.total) + ") uploaded... please wait");
+          }
+        }, false);
+
+        return xhr;
+      },
+      success: function (msg) {
+        $fileList.removeClass("uploading");
+
+        requestAnimationFrame(function () {
+          alert("Upload Complete");
+          location.reload();
+        });
+      },
+      error: function (xhr, status, error) {
+        $fileList.removeClass("uploading");
+
+        requestAnimationFrame(function () {
+          alert("Upload Failed");
+        });
+      }
+    });
+
+    $("#file-list").addClass("uploading");
+  }
+
+  function updateToolbar() {
+    var $delete = $("#delete");
+    var $selected = $(".file-row.selected");
+
+    if ($selected.length > 0) {
+      $delete.removeAttr("disabled");
+    } else {
+      $delete.attr("disabled", "disabled");
+    }
+  }
+
+  $(function () {
+    var $fileList = $("#file-list");
+
+    $fileList.on("dragenter", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      $fileList.addClass("dragging");
+    });
+
+    $fileList.on("dragleave", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      $fileList.removeClass("dragging");
+    });
+
+    $fileList.on("dragover", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    $fileList.on("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      $fileList.removeClass("dragging");
+
+      uploadFiles(e.originalEvent.dataTransfer.files);
+    });
+
+    $("#upload").click(function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      $("#file").click();
+    });
+
+    $("#file").change(function (e) {
+      if (e.target.files.length > 0) {
+        uploadFiles(e.target.files);
+      }
+    });
+
+    var noFileRowClick = window.matchMedia ? window.matchMedia("(hover: none)").matches : false;
+
+    $(".file-row").click(function (e) {
+      if (noFileRowClick) {
+        return;
+      }
+
+      var $row = $(e.currentTarget);
+
+      if (e.target.tagName.toLowerCase() === "a") {
+        return;
+      }
+
+      if (e.shiftKey) {
+        var $rows = $(".file-row");
+        var startIndex = $rows.index($rows.filter(".selected").first());
+        var endIndex = $rows.index($row);
+
+        if (startIndex < endIndex) {
+          $rows.slice(startIndex, endIndex + 1).addClass("selected");
+        } else {
+          $rows.slice(endIndex, startIndex + 1).addClass("selected");
+        }
+
+        if (window.getSelection) {
+          if (window.getSelection().empty) {  // Chrome
+            window.getSelection().empty();
+          } else if (window.getSelection().removeAllRanges) {  // Firefox
+            window.getSelection().removeAllRanges();
+          }
+        } else if (document.selection) {  // IE?
+          document.selection.empty();
+        }
+
+        updateAllCheckboxStatus();
+
+        updateToolbar();
+
+        return;
+      }
+
+      if (!e.ctrlKey) {
+        $(".file-row").removeClass("selected");
+      }
+
+      if ($row.hasClass("selected")) {
+        $row.removeClass("selected");
+      } else {
+        $row.addClass("selected");
+      }
+
+      updateAllCheckboxStatus();
+
+      updateToolbar();
+    });
+
+    $(".file-list tbody > tr").dblclick((e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const $row = $(e.currentTarget);
+      const $a = $row.find("a");
+
+      $a[0].click();
+    });
+
+    $("#delete").click(function () {
+      const $rows = $(".file-row.selected");
+      const files = $rows.map(function () {
+        return $(this).find("a").attr("href");
+      }).get();
+
+      if (files.length === 0) {
+        return;
+      }
+
+      if (!confirm("Are you sure you want to delete the selected file(s)?")) {
+        return;
+      }
+
+      $.ajax({
+        method: "DELETE",
+        url: location.href,
+        data: JSON.stringify(files),
+        contentType: "application/json",
+        success: function (msg) {
+          requestAnimationFrame(function () {
+            alert("Successfully deleted selected file(s)/folder(s)");
+            location.reload();
+          });
+        },
+        error: function (xhr, status, error) {
+          requestAnimationFrame(function () {
+            alert("Failed to delete selected file(s)/folder(s)");
+          });
+        }
+      });
+    });
+
+    $("#newfolder").click(function () {
+      var folderName = prompt("Enter a name for the new folder");
+
+      if (!folderName) {
+        return;
+      }
+
+      $.ajax({
+        method: "PUT",
+        url: location.href + "/" + folderName,
+        success: function (msg) {
+          requestAnimationFrame(function () {
+            alert("Successfully created new folder");
+            location.reload();
+          });
+        },
+        error: function (xhr, status, error) {
+          requestAnimationFrame(function () {
+            alert("Failed to create new folder");
+          });
+        }
+      });
+    });
+
+    var $allCheckbox = $("th.select-column input[type=checkbox]");
+
+    $allCheckbox.click(function (e) {
+      var $checkbox = $(e.currentTarget);
+      var checked = $checkbox.prop("checked");
+
+      $(".file-row input[type=checkbox]").prop("checked", checked);
+      if (checked) {
+        $(".file-row").addClass("selected")
+      } else {
+        $(".file-row").removeClass("selected")
+      }
+
+      updateToolbar();
+    });
+
+    function updateAllCheckboxStatus() {
+      var $rows = $(".file-row");
+      var $selectedRows = $rows.filter(".selected");
+
+      if ($selectedRows.length === $rows.length) {
+        $allCheckbox.prop("checked", true);
+        $allCheckbox.prop("indeterminate", false);
+      } else if ($selectedRows.length) {
+        $allCheckbox.prop("checked", "indeterminate");
+        $allCheckbox.prop("indeterminate", true);
+      } else {
+        $allCheckbox.prop("checked", false);
+        $allCheckbox.prop("indeterminate", false);
+      }
+
+      $rows.children("td.select-column").each(function () {
+        var $checkbox = $(this).children("input[type=checkbox]");
+        var $row = $checkbox.closest(".file-row");
+
+        if ($row.hasClass("selected")) {
+          $checkbox.prop("checked", true);
+        } else {
+          $checkbox.prop("checked", false);
+        }
+      });
+    }
+
+    $(".file-row > td > input[type=checkbox]").click((e) => {
+      e.stopPropagation();
+
+      var $checkbox = $(e.currentTarget);
+      var checked = $checkbox.prop("checked");
+
+      if (checked) {
+
+        $checkbox.closest(".file-row").addClass("selected");
+      } else {
+        $checkbox.closest(".file-row").removeClass("selected");
+      }
+
+      updateAllCheckboxStatus();
+
+      updateToolbar();
+    })
+
+    updateToolbar();
+  });
+</script>
+<input type="file" name="file" id="file" hidden />
+<div class="toolbar">
+  <div class="left">
+    <button id="newfolder">&#x1F4C1;&nbsp;New Folder</button>
+    <button id="upload" class="upload">&#x2601;&nbsp;Upload</button>
+  </div>
+  <div class="right">
+    <button id="delete">&#x1F5D1;&nbsp;Delete</button>
+  </div>
+</div>
+<div id="file-list" class="file-list">
+  <div class="drag-indicator">
+    Drop file(s) to upload
+  </div>
+  <div class="progress-overlay">
+    <div class="bar">
+      <div id="progressbar" class="progress" style="width: 50%;"></div>
+    </div>
+    <div id="status">Uploading... please wait</div>
+  </div>
+  <table>
+    <colgroup>
+      <col class="select-column" />
+      <col />
+      <col class="file-name" />
+      <col />
+      <col />
+      <col />
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="select-column">
+          <input type="checkbox" />
+        </th>
+        <th>Type</th>
+        <th class="file-name">File</th>
+        <th>Size</th>
+        <th>Created</th>
+        <th>Modified</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#if path}}
+      <tr>
+        <td class="select-column"></td>
+        <td>&#x1F4C1;</td>
+        <td class="file-name">
+          <a href="{{parent}}" class="directory">..</a>
+        </td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      {{/if}}
+      {{#each files}}
+      <tr class="file-row">
+        <td class="select-column">
+          <input type="checkbox" />
+        </td>
+        <td>{{#if isDirectory}}&#x1F4C1;{{/if}}</td>
+        <td class="file-name">
+          <a href="{{../path}}/{{name}}" class="{{#if isDirectory}}directory{{else}}file{{/if}}">{{name}}</a>
+        </td>
+        <td>{{size}}</td>
+        <td>{{created}}</td>
+        <td>{{modified}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,122 @@
+<html lang="en">
+
+<head>
+  <title>Remote File Browser</title>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --border-color: #cdcdcd;
+      --background-color: #ffffff;
+      --text-color: #000000;
+
+      --link-color: #39baff;
+      --link-hover-color: #2a8dd4;
+      --link-visited-color: #39baff;
+
+      --row-hover-color: rgba(95, 199, 255, 0.25);
+      --row-selected-color: rgba(95, 199, 255, 0.375);
+
+      --overlay-background-color: rgba(0, 0, 0, 0.5);
+      --overlay-text-color: #ffffff;
+
+      --progressbar-background-color: #ffffff;
+      --progressbar-bar-color: #69ff4b;
+
+      --button-background-color: #39baff;
+      --button-hover-background-color: #2a8dd4;
+      --button-disabled-background-color: #cdcdcd;
+      --button-text-color: #ffffff;
+      --button-disabled-text-color: #ffffff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --border-color: #555555;
+        --background-color: #222222;
+        --text-color: #ffffff;
+
+        --row-hover-color: rgba(95, 199, 255, 0.25);
+        --row-selected-color: rgba(95, 199, 255, 0.375);
+
+        --overlay-background-color: rgba(0, 0, 0, 0.5);
+        --overlay-text-color: #ffffff;
+
+        --progressbar-background-color: #ffffff;
+        --progressbar-bar-color: #69ff4b;
+
+        --button-background-color: #127fba;
+        --button-hover-background-color: #2a8dd4;
+        --button-disabled-background-color: #747474;
+        --button-text-color: #ffffff;
+        --button-disabled-text-color: #ffffff;
+      }
+    }
+
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right:
+        0;
+      margin: 0;
+      padding: 1em;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    a {
+      color: var(--link-color);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--link-hover-color);
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: var(--link-visited-color);
+    }
+
+    button {
+      padding: 0.3em 0.5em;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      background-color: var(--button-background-color);
+      color: var(--button-text-color);
+      border-radius: 0.3em;
+    }
+
+    button:hover {
+      background-color: var(--button-hover-background-color);
+      box-shadow: 0 0 0.1em 0.1em var(--button-background-color);
+    }
+
+    button[disabled] {
+      background-color: var(--button-disabled-background-color);
+      color: var(--button-disabled-text-color);
+      box-shadow: none;
+      cursor: default;
+    }
+  </style>
+
+  <script src="js/jquery-3.7.0.min.js"></script>
+
+  <!-- CSS variable polyfill for IE11 -->
+  <script>window.MSInputMethodContext && document.documentMode && document.write('<script src="js/ie11CustomProperties.min.js"><\/script>');</script>
+</head>
+
+<body data-turbolinks="false">
+  {{{body}}}
+</body>
+
+</html>
