@@ -1,5 +1,7 @@
 # file-browser-cli
 
+[![npm version](https://badge.fury.io/js/file-browser-cli.svg)](https://badge.fury.io/js/file-browser-cli)
+
 > Creates simple HTTP server to browse, download & upload files form your local system remotely.
 
 ![Light Theme](.resources/screenshot-01.png)
