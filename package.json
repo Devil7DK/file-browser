@@ -1,6 +1,6 @@
 {
   "name": "file-browser-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "license": "MIT",
   "description": "Simple server to browse files & directories remotely",
