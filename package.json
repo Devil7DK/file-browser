@@ -31,5 +31,12 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
-  }
+  },
+  "keywords": [
+    "file browser",
+    "remote file browser",
+    "file explorer",
+    "remote file explorer",
+    "simple file server"
+  ]
 }
