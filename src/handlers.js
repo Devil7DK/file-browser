@@ -1,7 +1,8 @@
+const { existsSync, mkdirSync, rmSync, rmdirSync, statSync } = require("fs");
+const archiver = require("archiver");
 const { join, relative, resolve } = require("path");
 
 const { listFiles } = require("./utils");
-const { existsSync, rmSync, rmdirSync, statSync, mkdirSync } = require("fs");
 
 /**
  * Return a middleware function to delete file or directory if exists
@@ -105,9 +106,79 @@ function renderFileListHandler(browsingDir) {
     }
 }
 
+/**
+ * Return a middleware function to zip selected files & directories using archiver and stream it to the client
+ * 
+ * @param {string} browsingDir The top level directory to browse
+ * @returns {import("express").RequestHandler"}
+ */
+function zipFileHandler(browsingDir) {
+    return function (req, res, next) {
+        const isZip = req.query.zip;
+        const files = req.query.files;
+
+        if (!isZip || !files) {
+            return next();
+        }
+
+        let pathsToZip = [];
+
+        try {
+            pathsToZip = JSON.parse(files);
+        } catch (e) {
+            return res.status(400).send("Invalid files parameter");
+        }
+
+        if (!Array.isArray(pathsToZip) || pathsToZip.length === 0) {
+            return res.status(400).send("Invalid files parameter");
+        }
+
+        for (const pathToZip of pathsToZip) {
+            const path = join(browsingDir, pathToZip);
+
+            if (!existsSync(path)) {
+                return res.status(404).send(`File or directory ${pathToZip} does not exist`);
+            }
+        }
+
+        const archive = archiver('zip', {
+            zlib: { level: 9 } // Sets the compression level.
+        });
+
+        archive.on('warning', function (err) {
+            console.warn("Warning while zipping files", err)
+        });
+
+        archive.on('error', function (err) {
+            console.error("Failed to zip files", err);
+        });
+
+        archive.on("close", () => res.end());
+
+        archive.pipe(res);
+
+        for (const pathToZip of pathsToZip) {
+            const path = join(browsingDir, pathToZip);
+
+            if (statSync(path).isDirectory()) {
+                archive.directory(path, pathToZip.replace(/^\//, ""));
+            } else {
+                archive.file(path, { name: pathToZip.replace(/^\//, "") });
+            }
+        }
+
+        res.set("Content-Type", "application/zip");
+        res.set("Content-Disposition", `attachment; filename="${req.path.replaceAll(/\/+$/g, "") || "files"}.zip"`);
+        res.set("Content-Transfer-Encoding", "binary");
+
+        archive.finalize();
+    }
+}
+
 module.exports = {
     deleteHandler,
     downloadFileHandler,
     newFolderHandler,
-    renderFileListHandler
+    renderFileListHandler,
+    zipFileHandler,
 }

@@ -11,6 +11,7 @@ const {
     downloadFileHandler,
     deleteHandler,
     newFolderHandler,
+    zipFileHandler,
 } = require("./handlers");
 
 const { Command } = require("commander");
@@ -49,6 +50,7 @@ const deleteFileOrDir = deleteHandler(browsingDir);
 const downloadFile = downloadFileHandler(browsingDir);
 const newFolder = newFolderHandler(browsingDir);
 const renderFileList = renderFileListHandler(browsingDir);
+const zipFile = zipFileHandler(browsingDir);
 
 const upload = multer({
     storage: multer.diskStorage({
@@ -107,7 +109,7 @@ app.delete("/*", deleteFileOrDir);
 
 app.use(express.static(join(__dirname, "..", "public")));
 
-app.get("/*", downloadFile, renderFileList);
+app.get("/*", downloadFile, zipFile, renderFileList);
 
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);

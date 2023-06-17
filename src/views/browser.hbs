@@ -182,12 +182,15 @@
 
   function updateToolbar() {
     var $delete = $("#delete");
+    var $downloadZip = $("#downloadZip");
     var $selected = $(".file-row.selected");
 
     if ($selected.length > 0) {
       $delete.removeAttr("disabled");
+      $downloadZip.removeAttr("disabled");
     } else {
       $delete.attr("disabled", "disabled");
+      $downloadZip.attr("disabled", "disabled");
     }
   }
 
@@ -334,6 +337,20 @@
       });
     });
 
+    $("#downloadZip").click(function () {
+      const $rows = $(".file-row.selected");
+      const files = $rows.map(function () {
+        return $(this).find("a").attr("href");
+      }).get();
+
+      if (files.length === 0) {
+        return;
+      }
+
+      const url = location.href + "?zip=true&files=" + encodeURIComponent(JSON.stringify(files));
+      window.open(url, "_blank");
+    })
+
     $("#newfolder").click(function () {
       var folderName = prompt("Enter a name for the new folder");
 
@@ -429,6 +446,7 @@
     <button id="upload" class="upload">&#x2601;&nbsp;Upload</button>
   </div>
   <div class="right">
+    <button id="downloadZip">&#x1F5DC;&nbsp;Downlod as ZIP</button>
     <button id="delete">&#x1F5D1;&nbsp;Delete</button>
   </div>
 </div>
