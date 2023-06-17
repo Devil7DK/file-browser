@@ -8,6 +8,12 @@
     "name": "Dineshkumar T",
     "email": "dineshthangavel47@gmail.com"
   },
+  "homepage": "https://github.com/Devil7DK/file-browser",
+  "bugs": "https://github.com/Devil7DK/file-browser/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Devil7DK/file-browser.git"
+  },
   "bin": {
     "file-browser": "./src/index.js"
   },
